@@ -34,7 +34,7 @@ namespace DiplomaProject.Mongo.Models
         [BsonElement("connection_id")]       public int ConnectionId;
         [BsonElement("http_referer")]        public string HttpReferer;
         [BsonElement("request_path")]        public string RequestPath;
-        [BsonElement("millis")]              public float Millis;
+        [BsonElement("millis")]              public string Millis;
         [BsonElement("facility")]            public int Facility;
     }
 }

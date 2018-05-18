@@ -9,7 +9,7 @@ namespace DiplomaProject.Mongo.Connection
 {
     internal class MongoConnectionClass
     {
-        private const string DatabaseName = "DCLogs";
+        private const string DatabaseName = "local";
         private const string Host = "localhost";
         private const int Port = 27017;
 
@@ -17,12 +17,12 @@ namespace DiplomaProject.Mongo.Connection
 
         public MongoConnectionClass()
         {
-            var mongoClientSettings = new MongoClientSettings
+            MongoClientSettings mongoClientSettings = new MongoClientSettings
             {
                 Server = new MongoServerAddress(Host, Port)
             };
 
-            var client = new MongoClient(mongoClientSettings);
+            MongoClient client = new MongoClient(mongoClientSettings);
 
             Database = client.GetDatabase(DatabaseName);
         }
