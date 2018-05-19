@@ -18,7 +18,8 @@ namespace DiplomaProject
 
         private static void Main(string[] args)
         {
-           
+            var test = DataHelper.GetAndProcessData(DbClass, 1519770787);
+            Console.WriteLine("dsds");
         }
     }
 }

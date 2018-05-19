@@ -14,6 +14,18 @@ namespace DiplomaProject.Helpers
 {
     internal class DataHelper
     {
+        public static List<ProcessedLogInfo> GetAndProcessData(MongoConnectionClass db, long from = 0, long to = long.MaxValue)
+        {
+            FilterDefinitionBuilder<LogInfo> builder = Builders<LogInfo>.Filter;
+            FilterDefinition<LogInfo> filter = builder.Gte("timestamp", from)
+                                                    & builder.Lte("timestamp", to);
+
+            IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("logs");
+            List<LogInfo> logList = logCollection.Find(filter).ToList();
+
+            return PreprocessLogClass(logList);
+        }
+
         public static List<ProcessedLogInfo> PreprocessLogClass(List<LogInfo> plainLogs)
         {
             List<ProcessedLogInfo> processedList = new List<ProcessedLogInfo>();
@@ -26,17 +38,19 @@ namespace DiplomaProject.Helpers
                 int responseBytes = plainLog.ResponseBytes;
                 int responseStatus = plainLog.ResponseStatus;
                 int connectionRequests = plainLog.ConnectionRequests;
+                long timestamp = plainLog.Timestamp;
 
                 //GET = 0, POST = 1
-                int requestVerb = (plainLog.RequestVerb == "POST") ? 1 : 0;
+                int requestVerb = Converters.RequestVerbConverter(plainLog.RequestVerb);
+                
                 //true = 1, false = 0
-                int nginxAccess = (plainLog.NginxAccess == "true") ? 1 : 0;
+                int nginxAccess = (plainLog.NginxAccess) ? 1 : 0;
                 //refferer prev = prev curr => 1 else 0
                 int httpRefferer = (plainLog.HttpReferer == prevLog.HttpReferer) ? 1 : 0;
                 //millis => to int (take part before comma and add as thouthands)
                 int millis = Converters.ParseMillis(plainLog.Millis);
                 //date to unix timestamp
-                long timestamp = Converters.ParseDate(plainLog.Timestamp);
+               
 
                 ProcessedLogInfo processedLog = new ProcessedLogInfo(connectionId, connectionRequests, requestVerb, responseStatus,
                     responseBytes, nginxAccess, httpRefferer, millis, timestamp);
@@ -86,7 +100,8 @@ namespace DiplomaProject.Helpers
             Console.WriteLine("Deleted crashed logs. Total deleted files : " + result.DeletedCount);
         }
 
-        public static async void FixTimeStampFormat(MongoConnectionClass db)
+        [Obsolete]
+        public static void FixTimeStampFormat(MongoConnectionClass db)
         {
             IMongoCollection<LogInfo> collection = db.Database.GetCollection<LogInfo>("logs");
 
@@ -95,13 +110,15 @@ namespace DiplomaProject.Helpers
 
             for (int i = 0; i < 100 + 1; i++)
             {
-                List<LogInfo> data = await collection.Find(new BsonDocument()).Skip(pack * i).Limit(pack)
-                    .ToListAsync();
+                List<LogInfo> data =  collection.Find(new BsonDocument()).Skip(pack * i).Limit(pack)
+                    .ToList();
 
                 foreach (LogInfo log in data)
                 {
-                   await collection.UpdateManyAsync(new BsonDocument("_id", log.Id),                       
-                       new BsonDocument("$set", new BsonDocument("timestamp", Converters.ParseDate(log.Timestamp)))); 
+                   //long result = Converters.ParseDate(log.Timestamp);
+
+                    //collection.UpdateOne(new BsonDocument("_id", log.Id),                       
+                       //new BsonDocument("$set", new BsonDocument("timestamp", result))); 
                 }
 
                 Console.WriteLine("finished iteration : " + i);

@@ -11,13 +11,14 @@ namespace DiplomaProject.Helpers
     {
         public static int ParseMillis(string millis)
         {
-            string[] splitted = millis.Split(new[] { "," }, StringSplitOptions.None);
+            string[] splitted = millis.Split(new[] { "." }, StringSplitOptions.None);
 
             return Convert.ToInt32(splitted.Last()) + (Convert.ToInt32(splitted.First()) * 1000);
         }
 
         public static long ParseDate(string date)
         {
+            //var t = Convert.ToDateTime(date);
             return (long)Convert.ToDateTime(date).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
@@ -47,6 +48,33 @@ namespace DiplomaProject.Helpers
                 {8, logInfo.Millis },
                 {9, logInfo.Timestamp }
             };
+        }
+
+        public static int RequestVerbConverter(string reqVerb)
+        {
+            switch (reqVerb.ToUpper())
+            {
+                case "GET":
+                    return 0;
+                case "POST":
+                    return 1;
+                case "PUT":
+                    return 2;
+                case "DELETE":
+                    return 3;
+                case "HEAD":
+                    return 4;
+                case "PATCH":
+                    return 5;
+                case "OPTIONS":
+                    return 6;
+                case "TRACE":
+                    return 7;
+                case "CONNECT":
+                    return 8;
+                default:
+                    return 9;
+            }
         }
     }
 }
