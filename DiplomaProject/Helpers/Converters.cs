@@ -31,9 +31,10 @@ namespace DiplomaProject.Helpers
 
         public static List<Dictionary<int, long>> ConvertLogListToDictionaryList(List<ProcessedLogInfo> logList)
         {
-            return logList.Select(ConvertLogToKeyDictionary).ToList();
+            //return logList.Select(ConvertLogToKeyDictionary).ToList();
+            return null;
         }
-
+        /*
         public static Dictionary<int, long> ConvertLogToKeyDictionary(ProcessedLogInfo logInfo)
         {
             return new Dictionary<int, long>
@@ -48,7 +49,7 @@ namespace DiplomaProject.Helpers
                 {8, logInfo.Millis },
                 {9, logInfo.Timestamp }
             };
-        }
+        }*/
 
         public static int RequestVerbConverter(string reqVerb)
         {

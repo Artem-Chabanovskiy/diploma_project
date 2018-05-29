@@ -8,37 +8,46 @@ using DiplomaProject.Mongo.Connection;
 using DiplomaProject.Mongo.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace DiplomaProject.Helpers
 {
     internal class DataHelper
     {
-        public static List<ProcessedLogInfo> GetAndProcessData(MongoConnectionClass db, long from = 0, long to = long.MaxValue)
+        public static List<ProcessedLogInfo> GetAndProcessData(MongoConnectionClass db, int limit)
         {
             FilterDefinitionBuilder<LogInfo> builder = Builders<LogInfo>.Filter;
-            FilterDefinition<LogInfo> filter = builder.Gte("timestamp", from)
-                                                    & builder.Lte("timestamp", to);
+            //FilterDefinition<LogInfo> filter = new BsonDocumentFilterDefinition<LogInfo>();
 
-            IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("logs");
-            List<LogInfo> logList = logCollection.Find(filter).ToList();
+            IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("Copy_of_logs");
+            List<LogInfo> logList = logCollection.Find(new BsonDocument()).Limit(limit).ToList();
 
             return PreprocessLogClass(logList);
+        }
+
+        public static void GetDataAndTransformToJson(MongoConnectionClass db)
+        {
+            IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("Copy_of_logs");
+            List<LogInfo> logList = logCollection.Find(new BsonDocument()).Limit(300).ToList();
+            PreprocessLogClass(logList);
         }
 
         public static List<ProcessedLogInfo> PreprocessLogClass(List<LogInfo> plainLogs)
         {
             List<ProcessedLogInfo> processedList = new List<ProcessedLogInfo>();
+            
             LogInfo prevLog = new LogInfo();
 
             foreach (LogInfo plainLog in plainLogs)
             {
                 //no formatting, already good
-                int connectionId = plainLog.ConnectionId;
+                //int connectionId = plainLog.ConnectionId;
                 int responseBytes = plainLog.ResponseBytes;
                 int responseStatus = plainLog.ResponseStatus;
                 int connectionRequests = plainLog.ConnectionRequests;
-                long timestamp = plainLog.Timestamp;
+                string timestamp = plainLog.Timestamp;
+                string remoteAdress = plainLog.RemoteAdress;
 
                 //GET = 0, POST = 1
                 int requestVerb = Converters.RequestVerbConverter(plainLog.RequestVerb);
@@ -48,16 +57,17 @@ namespace DiplomaProject.Helpers
                 //refferer prev = prev curr => 1 else 0
                 int httpRefferer = (plainLog.HttpReferer == prevLog.HttpReferer) ? 1 : 0;
                 //millis => to int (take part before comma and add as thouthands)
-                int millis = Converters.ParseMillis(plainLog.Millis);
+                string millis = plainLog.Millis;
                 //date to unix timestamp
                
 
-                ProcessedLogInfo processedLog = new ProcessedLogInfo(connectionId, connectionRequests, requestVerb, responseStatus,
-                    responseBytes, nginxAccess, httpRefferer, millis, timestamp);
+                ProcessedLogInfo processedLog = new ProcessedLogInfo(connectionRequests, requestVerb, responseStatus,
+                    responseBytes, nginxAccess, httpRefferer, millis, timestamp, remoteAdress);
 
                 prevLog = plainLog;
                 processedList.Add(processedLog);
             }
+
 
             return processedList;
         }
@@ -79,7 +89,7 @@ namespace DiplomaProject.Helpers
 
         public static void FilterData(MongoConnectionClass db)
         {
-            IMongoCollection<BsonDocument> collection = db.Database.GetCollection<BsonDocument>("logs");
+            IMongoCollection<BsonDocument> collection = db.Database.GetCollection<BsonDocument>("Copy_of_logs");
 
             FilterDefinitionBuilder<BsonDocument> builder = Builders<BsonDocument>.Filter;
             FilterDefinition<BsonDocument> filter = 
@@ -103,7 +113,7 @@ namespace DiplomaProject.Helpers
         [Obsolete]
         public static void FixTimeStampFormat(MongoConnectionClass db)
         {
-            IMongoCollection<LogInfo> collection = db.Database.GetCollection<LogInfo>("logs");
+            IMongoCollection<LogInfo> collection = db.Database.GetCollection<LogInfo>("Copy_of_logs");
 
             long amount = collection.Count(new BsonDocument());
             int pack = (int) Math.Round((double)amount / 100);
@@ -115,10 +125,10 @@ namespace DiplomaProject.Helpers
 
                 foreach (LogInfo log in data)
                 {
-                   //long result = Converters.ParseDate(log.Timestamp);
+                   long result = Converters.ParseDate(log.Timestamp);
 
-                    //collection.UpdateOne(new BsonDocument("_id", log.Id),                       
-                       //new BsonDocument("$set", new BsonDocument("timestamp", result))); 
+                    collection.UpdateOne(new BsonDocument("_id", log.Id),                       
+                       new BsonDocument("$set", new BsonDocument("unix_timestamp", result)), new UpdateOptions { IsUpsert = true }); 
                 }
 
                 Console.WriteLine("finished iteration : " + i);

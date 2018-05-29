@@ -20,7 +20,7 @@ namespace DiplomaProject.Mongo.Models
         [BsonElement("http_user_agent")]     public string HttpUserAgent;
         [BsonElement("remote_user")]         public string RemoteUser;
         [BsonElement("gl2_source_node")]     public string SourceNode;
-        [BsonElement("timestamp")]           public long Timestamp;
+        [BsonElement("timestamp")]           public string Timestamp;
         [BsonElement("request_verb")]        public string RequestVerb;
         [BsonElement("remote_addr")]         public string RemoteAdress;
         [BsonElement("response_status")]     public int ResponseStatus;
