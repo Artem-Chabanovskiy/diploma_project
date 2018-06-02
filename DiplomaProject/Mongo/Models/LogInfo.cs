@@ -36,5 +36,6 @@ namespace DiplomaProject.Mongo.Models
         [BsonElement("request_path")]        public string RequestPath;
         [BsonElement("millis")]              public string Millis;
         [BsonElement("facility")]            public int Facility;
+        [BsonElement("unix_timestamp")]      public long UnixTimestamp;
     }
 }

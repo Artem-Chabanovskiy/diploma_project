@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using DiplomaProject.Mongo.Connection;
 using DiplomaProject.Mongo.Models;
 using Newtonsoft.Json;
+using ServiceStack;
 using ServiceStack.Redis;
 
 namespace DiplomaProject
@@ -17,11 +18,36 @@ namespace DiplomaProject
     {
         private static readonly MongoConnectionClass DbClass = new MongoConnectionClass();
         private const string FilePath = @"C:\Users\Artem Chabanovskiy\Envs\recurrent\data.json";
-        private const string UrlPath = @"http://127.0.0.1:5000/train/data.json";
+        private const string UrlPath = @"http://127.0.0.1:5000/predict/data.json";
 
         private static void Main(string[] args)
         {
             string mode = Environment.GetEnvironmentVariable("APP_ENV") ?? "manual";
+
+            if (mode == "train")
+            {
+                List<ProcessedLogInfo> resultList = new List<ProcessedLogInfo>();
+
+                for (int i = 10; i < 20; i++)
+                {
+                    resultList = DataHelper.GetTrainData(DbClass, i);
+
+                    string json = JsonConvert.SerializeObject(resultList);
+                    File.WriteAllText(FilePath, json);
+                    Thread.Sleep(15 * 1000);
+
+                    resultList.Clear();
+                    GC.Collect();
+
+                    string result = new WebClient().DownloadString(UrlPath);
+
+                    Console.WriteLine("Iteration #" + i);
+                    Console.WriteLine("Accuracy : " + result.Replace("\"",""));
+
+                    File.WriteAllText(FilePath, string.Empty);
+                    Thread.Sleep(15 * 1000);                 
+                }         
+            }
 
             if (mode == "manual")
             {
@@ -44,8 +70,7 @@ namespace DiplomaProject
                     return;
                 }
 
-                List<ProcessedLogInfo> resultList = DataHelper.GetAndProcessData(DbClass, result0, result1);
-
+                List<ProcessedLogInfo> resultList = DataHelper.GetAndProcessData(DbClass, 1516153068, 1516154334);
                 if (!resultList.Any())
                 {
                     Console.WriteLine("No data on this dates");
@@ -54,13 +79,22 @@ namespace DiplomaProject
 
                 string json = JsonConvert.SerializeObject(resultList);
                 File.WriteAllText(FilePath, json);
-                Thread.Sleep(5 * 1000);
+                Thread.Sleep(15 * 1000);
 
-                string result = new WebClient().DownloadString(UrlPath);
+                WebClientEx webClient = new WebClientEx();
+
+                string result = webClient.DownloadString(UrlPath);
+                int[] array = Converters.JSonArray2IntArray(JsonConvert.DeserializeObject<JArray>(result));
+
+                int zerosCount = array.Where(x => x == 0).Count();
+                int onesCount = array.Where(x => x == 1).Count();
+
+                Console.WriteLine(zerosCount * 2 >= onesCount ? "Notmal state of system" : "Anomaly state of system");
+
                 Console.WriteLine(result);
 
-                JToken jObj = JToken.Parse(result);
-                Console.WriteLine(jObj);
+                File.WriteAllText(FilePath, string.Empty);
+                Thread.Sleep(15 * 1000);
             }
             else
             {
@@ -101,6 +135,16 @@ namespace DiplomaProject
 
                     subscription.SubscribeToChannels("main");
                 }
+            }
+        }
+
+        private class WebClientEx : WebClient
+        {
+            protected override WebRequest GetWebRequest(Uri uri)
+            {
+                WebRequest w = base.GetWebRequest(uri);
+                w.Timeout = Timeout.Infinite;
+                return w;
             }
         }
     }

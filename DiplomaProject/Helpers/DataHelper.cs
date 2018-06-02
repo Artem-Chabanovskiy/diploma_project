@@ -15,15 +15,44 @@ namespace DiplomaProject.Helpers
 {
     internal class DataHelper
     {
-        public static List<ProcessedLogInfo> GetAndProcessData(MongoConnectionClass db, int limit)
+        private const int Limit = 700000;
+
+        public static List<ProcessedLogInfo> GetAndProcessData(MongoConnectionClass db, long min = 0, long max = long.MaxValue)
         {
             FilterDefinitionBuilder<LogInfo> builder = Builders<LogInfo>.Filter;
-            //FilterDefinition<LogInfo> filter = new BsonDocumentFilterDefinition<LogInfo>();
+            FilterDefinition<LogInfo> filter = builder.Gte("unix_timestamp", min)
+                                                & builder.Lte("unix_timestamp", max);
 
             IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("Copy_of_logs");
-            List<LogInfo> logList = logCollection.Find(new BsonDocument()).Limit(limit).ToList();
 
-            return PreprocessLogClass(logList);
+            try
+            {
+                //List<LogInfo> logList = logCollection.Find(new BsonDocument()).Limit(limit).ToList();
+                List<LogInfo> logList = logCollection.Find(filter).ToList();
+                return PreprocessLogClass(logList);
+            }
+            catch (OutOfMemoryException)
+            {
+                Console.WriteLine("Can't load such big size of logs, try smaller time window");
+                throw;
+            }
+        }
+
+        public static List<ProcessedLogInfo> GetTrainData(MongoConnectionClass db, int iter)
+        {
+            IMongoCollection<LogInfo> logCollection = db.Database.GetCollection<LogInfo>("Copy_of_logs");
+
+            try
+            {
+                //List<LogInfo> logList = logCollection.Find(new BsonDocument()).Limit(limit).ToList();
+                List<LogInfo> logList = logCollection.Find(new BsonDocument()).Skip(iter * Limit).Limit(Limit).ToList();
+                return PreprocessLogClass(logList);
+            }
+            catch (OutOfMemoryException)
+            {
+                Console.WriteLine("Can't load such big size of logs, try smaller time window");
+                throw;
+            }
         }
 
         public static void GetDataAndTransformToJson(MongoConnectionClass db)
@@ -48,18 +77,15 @@ namespace DiplomaProject.Helpers
                 int connectionRequests = plainLog.ConnectionRequests;
                 string timestamp = plainLog.Timestamp;
                 string remoteAdress = plainLog.RemoteAdress;
+                string millis = plainLog.Millis;
 
-                //GET = 0, POST = 1
+                //GET = 0, POST = 1, PUT = 3 ... 
                 int requestVerb = Converters.RequestVerbConverter(plainLog.RequestVerb);
-                
                 //true = 1, false = 0
                 int nginxAccess = (plainLog.NginxAccess) ? 1 : 0;
                 //refferer prev = prev curr => 1 else 0
                 int httpRefferer = (plainLog.HttpReferer == prevLog.HttpReferer) ? 1 : 0;
-                //millis => to int (take part before comma and add as thouthands)
-                string millis = plainLog.Millis;
-                //date to unix timestamp
-               
+                
 
                 ProcessedLogInfo processedLog = new ProcessedLogInfo(connectionRequests, requestVerb, responseStatus,
                     responseBytes, nginxAccess, httpRefferer, millis, timestamp, remoteAdress);

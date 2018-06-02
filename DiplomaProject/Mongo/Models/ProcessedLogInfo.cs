@@ -10,7 +10,6 @@ namespace DiplomaProject.Mongo.Models
 {
     internal class ProcessedLogInfo
     {
-        //public int ConnectionId;
         public int ConnectionRequests;
         public int RequestVerb;
         public int ResponseStatus;
@@ -21,10 +20,9 @@ namespace DiplomaProject.Mongo.Models
         public string Timestamp;
         public string RemoteAddres;
 
-        public ProcessedLogInfo(/*int connectionId,*/ int connectionRequests, int requestVerb, int responseStatus,
+        public ProcessedLogInfo(int connectionRequests, int requestVerb, int responseStatus,
             int responseBytes, int nginxAccess, int httpReferer, string millis, string timestamp, string remoteAddres)
         {
-            //ConnectionId = connectionId;
             ConnectionRequests = connectionRequests;
             RequestVerb = requestVerb;
             ResponseStatus = responseStatus;

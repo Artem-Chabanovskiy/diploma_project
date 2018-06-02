@@ -9,9 +9,9 @@ namespace DiplomaProject.Mongo.Connection
 {
     internal class MongoConnectionClass
     {
-        private const string DatabaseName = "local";
-        private const string Host = "localhost";
-        private const int Port = 27017;
+        private readonly string _databaseName = Environment.GetEnvironmentVariable("DB_NAME") ?? "local";
+        private readonly string _host = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+        private readonly int _port = Environment.GetEnvironmentVariable("DB_PORT") != null ? Convert.ToInt32(Environment.GetEnvironmentVariable("DB_PORT")) :  27017;
 
         public IMongoDatabase Database;
 
@@ -19,12 +19,12 @@ namespace DiplomaProject.Mongo.Connection
         {
             MongoClientSettings mongoClientSettings = new MongoClientSettings
             {
-                Server = new MongoServerAddress(Host, Port)
+                Server = new MongoServerAddress(_host, _port)
             };
 
             MongoClient client = new MongoClient(mongoClientSettings);
 
-            Database = client.GetDatabase(DatabaseName);
+            Database = client.GetDatabase(_databaseName);
         }
     }
 }

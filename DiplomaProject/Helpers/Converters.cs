@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DiplomaProject.Mongo.Models;
+using Newtonsoft.Json.Linq;
 
 namespace DiplomaProject.Helpers
 {
@@ -29,27 +30,15 @@ namespace DiplomaProject.Helpers
             return dtDateTime;
         }
 
-        public static List<Dictionary<int, long>> ConvertLogListToDictionaryList(List<ProcessedLogInfo> logList)
+        public static int[] JSonArray2IntArray(JArray jsonArray)
         {
-            //return logList.Select(ConvertLogToKeyDictionary).ToList();
-            return null;
-        }
-        /*
-        public static Dictionary<int, long> ConvertLogToKeyDictionary(ProcessedLogInfo logInfo)
-        {
-            return new Dictionary<int, long>
+            int[] intArray = new int[jsonArray.Count()];
+            for (int i = 0; i < intArray.Length; ++i)
             {
-                {1, logInfo.ConnectionId },
-                {2, logInfo.ConnectionRequests },
-                {3, logInfo.RequestVerb },
-                {4, logInfo.ResponseStatus },
-                {5, logInfo.ResponseBytes },
-                {6, logInfo.NginxAccess },
-                {7, logInfo.HttpReferer },
-                {8, logInfo.Millis },
-                {9, logInfo.Timestamp }
-            };
-        }*/
+                intArray[i] = Convert.ToInt32(jsonArray[i]);
+            }
+            return intArray;
+        }
 
         public static int RequestVerbConverter(string reqVerb)
         {

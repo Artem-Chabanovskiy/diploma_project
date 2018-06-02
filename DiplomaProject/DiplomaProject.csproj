@@ -90,11 +90,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\XorDataSetGenerator.cs" />
-    <Compile Include="Exapmles\ExampleXor.cs" />
     <Compile Include="Helpers\Converters.cs" />
     <Compile Include="Helpers\DataHelper.cs" />
-    <Compile Include="Helpers\MatrixHelper.cs" />
     <Compile Include="Mongo\Connection\MongoConnectionClass.cs" />
     <Compile Include="Mongo\Models\LogInfo.cs" />
     <Compile Include="Mongo\Models\ProcessedLogInfo.cs" />
